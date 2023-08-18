@@ -33,6 +33,7 @@ const typeDefs = `#graphql
         createProduct(product: ProductInput): Product
         deleteProduct(id: String): Boolean
         updateProduct(id: String, product: ProductInput): Product
+        setQuantity(id: String, quantity: Int): Boolean
     }
 `;
 
@@ -144,6 +145,22 @@ const resolvers = {
         });
 
       return product;
+    },
+    async setQuantity(_, args, contextValue) {
+      const { id, quantity } = args;
+      const bucket: Bucket =
+        contextValue.couchbaseCluster.bucket('store-bucket');
+      const collection: Collection = bucket
+        .scope('products-scope')
+        .collection('products');
+      const updatedMutationResult: MutationResult = await collection
+        .mutateIn(id, [couchbase.MutateInSpec.replace('quantity', quantity)])
+        .catch((error) => {
+          console.log(error);
+          throw error;
+        });
+
+      return true;
     },
   },
 };

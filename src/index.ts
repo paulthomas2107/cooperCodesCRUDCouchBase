@@ -80,7 +80,7 @@ const resolvers = {
       var productsArray = [];
 
       for (var i = 0; i < result.rows.length; i++) {
-        const id = result.rows[i];
+        const id = result.rows[i].id;
         const getResult: GetResult = await collection.get(id).catch((error) => {
           console.log(error);
           throw error;

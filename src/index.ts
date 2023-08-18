@@ -31,6 +31,7 @@ const typeDefs = `#graphql
     type Mutation {
         createProduct(product: ProductInput): Product
         deleteProduct(id: String): Boolean
+        updateProduct(id: String, product: ProductInput): Product
     }
 `;
 
@@ -96,6 +97,23 @@ const resolvers = {
         });
 
       return true;
+    },
+    async updateProduct(_, args, contextValue) {
+      const { id, product } = args;
+      const bucket: Bucket =
+        contextValue.couchbaseCluster.bucket('store-bucket');
+      const collection: Collection = bucket
+        .scope('products-scope')
+        .collection('products');
+
+      const updatedMutationResult: MutationResult = await collection
+        .replace(id, product)
+        .catch((error) => {
+          console.log(error);
+          throw error;
+        });
+
+      return product;
     },
   },
 };

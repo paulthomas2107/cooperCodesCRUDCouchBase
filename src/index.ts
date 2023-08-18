@@ -25,6 +25,7 @@ const typeDefs = `#graphql
 
     type Query {
         getProduct(id: String): Product
+        getAllProductsWithTerm(term: String): [Product]
     }
     
 
@@ -35,7 +36,7 @@ const typeDefs = `#graphql
     }
 `;
 
-/* mutations....
+/* mutations....  
 
 - createProduct
 - deleteProduct
@@ -59,6 +60,35 @@ const resolvers = {
       });
 
       return getResult.content;
+    },
+    async getAllProductsWithTerm(_, args, contextValue) {
+      const { term } = args;
+      const result = await contextValue.couchbaseCluster.searchQuery(
+        'index-products',
+        couchbase.SearchQuery.match(term),
+        {
+          limit: 2,
+        }
+      );
+
+      const bucket: Bucket =
+        contextValue.couchbaseCluster.bucket('store-bucket');
+      const collection: Collection = bucket
+        .scope('products-scope')
+        .collection('products');
+
+      var productsArray = [];
+
+      for (var i = 0; i < result.rows.length; i++) {
+        const id = result.rows[i];
+        const getResult: GetResult = await collection.get(id).catch((error) => {
+          console.log(error);
+          throw error;
+        });
+
+        productsArray.push(getResult.content);
+      }
+      return productsArray;
     },
   },
   Mutation: {
